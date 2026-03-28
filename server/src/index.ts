@@ -1,5 +1,7 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import { prisma } from "./lib/prisma";
 
 const app = express();
 const PORT = process.env.PORT ?? 8080;
@@ -7,8 +9,9 @@ const PORT = process.env.PORT ?? 8080;
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/api/health", async (_req, res) => {
+  await prisma.$queryRaw`SELECT 1`;
+  res.json({ status: "ok", db: "connected" });
 });
 
 app.listen(PORT, () => {
