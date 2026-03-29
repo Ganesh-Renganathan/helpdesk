@@ -1,28 +1,35 @@
-import { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
 
-function Home() {
-  const [status, setStatus] = useState<string | null>(null);
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { session, isPending } = useAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => res.json())
-      .then((data) => setStatus(data.status))
-      .catch(() => setStatus("error"));
-  }, []);
+  if (isPending) return null;
 
-  return (
-    <div>
-      <h1>Helpdesk</h1>
-      <p>Server status: {status ?? "loading..."}</p>
-    </div>
-  );
+  if (!session) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
 }
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </AuthProvider>
   );
 }
