@@ -1,16 +1,30 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { authClient } from "../lib/auth-client";
 import { useAuth } from "../contexts/AuthContext";
+
+const loginSchema = z.object({
+  email: z.string().email({ message: "Enter a valid email address" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
   const { session, isPending } = useAuth();
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
   useEffect(() => {
     if (!isPending && session) {
@@ -18,19 +32,13 @@ export default function Login() {
     }
   }, [session, isPending, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError(null);
     await authClient.signIn.email(
-      { email, password },
+      { email: data.email, password: data.password },
       {
         onSuccess: () => navigate("/", { replace: true }),
-        onError: (ctx) => {
-          setError(ctx.error.message ?? "Invalid email or password.");
-          setLoading(false);
-        },
+        onError: (ctx) => setServerError(ctx.error.message ?? "Invalid email or password."),
       }
     );
   };
@@ -68,28 +76,33 @@ export default function Login() {
             <p className="mt-1 text-sm text-gray-500">Sign in to your account to continue</p>
           </div>
 
-          {error && (
+          {serverError && (
             <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
               <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {error}
+              {serverError}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Email address
               </label>
               <input
                 type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                {...register("email")}
+                className={`w-full border rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                  errors.email
+                    ? "border-red-300 focus:ring-red-400"
+                    : "border-gray-200 focus:ring-indigo-500"
+                }`}
               />
+              {errors.email && (
+                <p className="mt-1.5 text-xs text-red-600">{errors.email.message}</p>
+              )}
             </div>
 
             <div>
@@ -98,20 +111,25 @@ export default function Login() {
               </label>
               <input
                 type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                {...register("password")}
+                className={`w-full border rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                  errors.password
+                    ? "border-red-300 focus:ring-red-400"
+                    : "border-gray-200 focus:ring-indigo-500"
+                }`}
               />
+              {errors.password && (
+                <p className="mt-1.5 text-xs text-red-600">{errors.password.message}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting}
               className="w-full bg-indigo-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50 transition-all"
             >
-              {loading ? (
+              {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
