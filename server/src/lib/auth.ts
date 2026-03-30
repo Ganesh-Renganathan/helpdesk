@@ -11,4 +11,12 @@ export const auth = betterAuth({
     disableSignUp: true,
   },
   trustedOrigins: process.env.TRUSTED_ORIGINS?.split(",") ?? ["http://localhost:3000"],
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        input: false,
+      },
+    },
+  },
 });

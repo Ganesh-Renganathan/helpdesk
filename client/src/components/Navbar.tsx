@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { authClient } from "../lib/auth-client";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -27,6 +27,14 @@ export default function Navbar() {
           </svg>
         </div>
         <span className="font-semibold text-gray-900">Helpdesk</span>
+      </div>
+
+      <div className="flex items-center gap-4">
+        {session?.user.role === "admin" && (
+          <Link to="/users" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+            Users
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

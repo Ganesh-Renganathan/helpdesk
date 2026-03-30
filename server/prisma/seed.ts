@@ -24,6 +24,7 @@ async function main() {
   const email = process.env.SEED_EMAIL!;
   const password = process.env.SEED_PASSWORD!;
   const name = process.env.SEED_NAME ?? "Admin";
+  const role = (process.env.SEED_ROLE as Role) ?? Role.admin;
 
   if (!email || !password) {
     throw new Error("SEED_EMAIL and SEED_PASSWORD must be set in .env");
@@ -44,7 +45,7 @@ async function main() {
       name,
       email,
       emailVerified: true,
-      role: Role.admin,
+      role,
       accounts: {
         create: {
           id: crypto.randomUUID().replace(/-/g, ""),
@@ -56,7 +57,7 @@ async function main() {
     },
   });
 
-  console.log(`Created admin user: ${email}`);
+  console.log(`Created ${role} user: ${email}`);
 }
 
 main()

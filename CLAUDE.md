@@ -65,7 +65,44 @@ const { session, isPending, error } = useAuth();
 ### User model
 - Roles: `admin` | `agent` (Prisma enum, default: `agent`)
 - Tables: `user`, `session`, `account`, `verification`
-- Seed admin user: `bun run seed` (runs `server/prisma/seed.ts`)
+- Seed users: `bun run seed` (runs `server/prisma/seed.ts`) — supports `SEED_ROLE` env var (default: `admin`)
+
+```bash
+# Create admin (default)
+SEED_EMAIL=admin@example.com SEED_PASSWORD=secret bun run seed
+
+# Create agent
+SEED_EMAIL=agent@example.com SEED_PASSWORD=secret SEED_NAME=Agent SEED_ROLE=agent bun run seed
+```
+
+### Exposing custom user fields in the session
+Better Auth does **not** include custom Prisma fields (e.g. `role`) in the session by default. To expose them:
+
+**Server** — declare in `user.additionalFields`:
+```ts
+user: {
+  additionalFields: {
+    role: { type: "string", input: false },
+  },
+},
+```
+
+**Client** — add `inferAdditionalFields` plugin:
+```ts
+import { inferAdditionalFields } from "better-auth/client/plugins";
+import type { auth } from "../../../server/src/lib/auth";
+
+export const authClient = createAuthClient({
+  plugins: [inferAdditionalFields<typeof auth>()],
+});
+```
+
+### Role-based access (client)
+`ProtectedRoute` in `client/src/App.tsx` accepts an `adminOnly` prop — non-admins are redirected to `/`:
+```tsx
+<Route path="/users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
+```
+Admin-only nav links use `session?.user.role === "admin"` in `Navbar.tsx`.
 
 ## shadcn/ui Setup (client)
 
