@@ -135,29 +135,14 @@ body {
 }
 ```
 
-## Testing (Playwright)
+## Writing E2E Tests
 
-E2e tests live in `e2e/` at the repo root. Playwright is installed as a root devDependency.
+Use the **`playwright-e2e-writer`** agent for all Playwright test authoring. Invoke it via the Agent tool whenever:
+- A new feature or page is completed
+- A bug is fixed and regression coverage is needed
+- Role-based access control is added to a route
 
-```bash
-bun run test:e2e          # run all tests (headless)
-bun run test:e2e:ui       # interactive UI mode
-bun run test:e2e:headed   # headed browser
-bun run test:e2e:debug    # debug mode
-bun run test:db:reset     # drop + recreate helpdesk_test DB
-```
-
-### Test database
-A separate `helpdesk_test` database is used — never the dev `helpdesk` DB. Config in `server/.env.test` (gitignored; copy from `server/.env.test.example`).
-
-- **Test user**: `test-admin@example.com` / `test-password-123` (role: `admin`)
-- `global-setup.ts` runs `prisma migrate deploy` + seeds the test user automatically before each run
-- Test DB is preserved between runs for inspection; `bun run test:db:reset` wipes it
-
-### `playwright.config.ts`
-- `webServer` starts both the Express server (`:8080`) and Vite client (`:3000`) automatically
-- `globalSetup` loads `server/.env.test` into `process.env` before web servers start, so the server process inherits the test `DATABASE_URL`
-- `NODE_ENV=test` in `.env.test` disables the auth rate limiter (rate limiting is production-only via `skip: () => process.env.NODE_ENV !== "production"`)
+The agent has full context on the test setup, credentials, selectors strategy, and Page Object Model conventions for this project.
 
 ## MCP Tools
 - **context7** — use to fetch up-to-date documentation for any library, framework, or tool used in this project (React, Express, Prisma, Vite, Tailwind, shadcn/ui, etc.). Always prefer context7 over relying on training data for library-specific docs.
