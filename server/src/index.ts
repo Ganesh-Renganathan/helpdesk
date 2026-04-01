@@ -19,6 +19,7 @@ const authLimiter = rateLimit({
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV !== "production",
 });
 
 app.all("/api/auth/*", authLimiter, toNodeHandler(auth));

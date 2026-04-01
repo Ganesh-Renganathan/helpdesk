@@ -45,6 +45,14 @@ app.get("/api/some-route", requireAuth, (req, res) => {
 ```
 The middleware calls `auth.api.getSession()` and attaches the session to `res.locals.session`. Returns `401` if unauthenticated.
 
+For admin-only routes, chain `requireAdmin` **after** `requireAuth`:
+```ts
+import { requireAdmin } from "./middleware/requireAdmin";
+
+app.get("/api/admin-route", requireAuth, requireAdmin, (req, res) => { ... });
+```
+Returns `403` if the user's role is not `admin`. **Never rely solely on client-side `ProtectedRoute adminOnly`** — it is not a security boundary.
+
 ### Client (`client/src/lib/auth-client.ts`)
 ```ts
 import { authClient } from "@/lib/auth-client";
@@ -126,6 +134,30 @@ body {
   color: hsl(var(--foreground));
 }
 ```
+
+## Testing (Playwright)
+
+E2e tests live in `e2e/` at the repo root. Playwright is installed as a root devDependency.
+
+```bash
+bun run test:e2e          # run all tests (headless)
+bun run test:e2e:ui       # interactive UI mode
+bun run test:e2e:headed   # headed browser
+bun run test:e2e:debug    # debug mode
+bun run test:db:reset     # drop + recreate helpdesk_test DB
+```
+
+### Test database
+A separate `helpdesk_test` database is used — never the dev `helpdesk` DB. Config in `server/.env.test` (gitignored; copy from `server/.env.test.example`).
+
+- **Test user**: `test-admin@example.com` / `test-password-123` (role: `admin`)
+- `global-setup.ts` runs `prisma migrate deploy` + seeds the test user automatically before each run
+- Test DB is preserved between runs for inspection; `bun run test:db:reset` wipes it
+
+### `playwright.config.ts`
+- `webServer` starts both the Express server (`:8080`) and Vite client (`:3000`) automatically
+- `globalSetup` loads `server/.env.test` into `process.env` before web servers start, so the server process inherits the test `DATABASE_URL`
+- `NODE_ENV=test` in `.env.test` disables the auth rate limiter (rate limiting is production-only via `skip: () => process.env.NODE_ENV !== "production"`)
 
 ## MCP Tools
 - **context7** — use to fetch up-to-date documentation for any library, framework, or tool used in this project (React, Express, Prisma, Vite, Tailwind, shadcn/ui, etc.). Always prefer context7 over relying on training data for library-specific docs.
