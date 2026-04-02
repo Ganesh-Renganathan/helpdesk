@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "../components/Navbar";
 
 type Role = "admin" | "agent";
@@ -29,20 +30,16 @@ function formatDate(iso: string) {
 }
 
 export default function Users() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [isPending, setIsPending] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isPending, error } = useQuery({
+    queryKey: ["users"],
+    queryFn: () =>
+      axios.get<{ users: User[] }>("/api/users").then((res) => res.data.users),
+  });
 
-  useEffect(() => {
-    fetch("/api/users")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load users");
-        return res.json();
-      })
-      .then((data) => setUsers(data.users))
-      .catch((err) => setError(err.message))
-      .finally(() => setIsPending(false));
-  }, []);
+  const users = data ?? [];
+  const errorMessage = error
+    ? ((error as any).response?.data?.error ?? error.message)
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,9 +66,9 @@ export default function Users() {
                 </div>
               ))}
             </div>
-          ) : error ? (
+          ) : errorMessage ? (
             <div className="px-6 py-12 text-center">
-              <p className="text-sm text-red-500">{error}</p>
+              <p className="text-sm text-red-500">{errorMessage}</p>
             </div>
           ) : users.length === 0 ? (
             <div className="px-6 py-12 text-center">
@@ -104,7 +101,7 @@ export default function Users() {
           )}
         </div>
 
-        {!isPending && !error && users.length > 0 && (
+        {!isPending && !errorMessage && users.length > 0 && (
           <p className="mt-3 text-xs text-gray-400 text-right">
             {users.length} user{users.length !== 1 ? "s" : ""}
           </p>

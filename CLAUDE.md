@@ -135,6 +135,19 @@ body {
 }
 ```
 
+## Data Fetching (client)
+
+- Use **axios** for all HTTP requests — never `fetch`
+- Use **TanStack Query** (`@tanstack/react-query`) for all server state — never `useEffect` + `useState` for data fetching
+- `QueryClientProvider` is set up in `client/src/main.tsx`
+
+```ts
+const { data, isPending, error } = useQuery({
+  queryKey: ["resource"],
+  queryFn: () => axios.get<ResponseType>("/api/resource").then((res) => res.data),
+});
+```
+
 ## Writing E2E Tests
 
 Use the **`playwright-e2e-writer`** agent for all Playwright test authoring. Invoke it via the Agent tool whenever:

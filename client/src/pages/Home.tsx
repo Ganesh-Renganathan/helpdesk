@@ -1,17 +1,16 @@
-import { useEffect, useState } from "react";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function Home() {
   const { session } = useAuth();
-  const [status, setStatus] = useState<string | null>(null);
+  const { data, isError } = useQuery({
+    queryKey: ["health"],
+    queryFn: () => axios.get<{ status: string }>("/api/health").then((res) => res.data),
+  });
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => res.json())
-      .then((data) => setStatus(data.status))
-      .catch(() => setStatus("error"));
-  }, []);
+  const status = isError ? "error" : (data?.status ?? null);
 
   const firstName = session?.user.name?.split(" ")[0] ?? "there";
 
