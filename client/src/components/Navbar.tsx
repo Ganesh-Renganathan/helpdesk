@@ -20,14 +20,14 @@ export default function Navbar() {
 
   return (
     <nav className="h-16 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-6">
-      <div className="flex items-center gap-2">
+      <Link to="/" className="flex items-center gap-2">
         <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
           <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
         </div>
         <span className="font-semibold text-gray-900">Helpdesk</span>
-      </div>
+      </Link>
 
       <div className="flex items-center gap-4">
         {session?.user.role === "admin" && (
