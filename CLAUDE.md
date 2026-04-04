@@ -148,6 +148,60 @@ const { data, isPending, error } = useQuery({
 });
 ```
 
+## Component Tests (Vitest + React Testing Library)
+
+Test files live next to their source files: `src/pages/Users.test.tsx` alongside `Users.tsx`.
+
+**Run commands** (from repo root):
+```bash
+bun run test:unit        # run once
+bun run test:unit:watch  # watch mode
+```
+
+Or from `client/`:
+```bash
+bun run test       # run once
+bun run test:watch # watch mode
+```
+
+**Stack**: Vitest + jsdom + React Testing Library + `@testing-library/jest-dom`. Setup file: `client/src/test/setup.ts`.
+
+### Writing component tests
+
+Always mock `axios` and `useAuth` — never hit real APIs or depend on auth state:
+
+```ts
+import { vi } from "vitest";
+import axios from "axios";
+
+vi.mock("axios");
+vi.mock("../contexts/AuthContext", () => ({
+  useAuth: () => ({ session: { user: { name: "Test Admin", role: "admin" } }, isPending: false, error: null }),
+}));
+
+const mockedAxios = vi.mocked(axios);
+```
+
+Wrap every render with `QueryClientProvider` (disable retries) and `MemoryRouter`:
+
+```ts
+function renderComponent() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MyComponent />
+      </QueryClientProvider>
+    </MemoryRouter>
+  );
+}
+```
+
+Use `await screen.findBy*()` (async) after mocked API calls resolve. Use `screen.queryBy*()` to assert absence.
+
+### Date formatting gotcha
+Mock ISO timestamps at **noon UTC** (`T12:00:00.000Z`), not midnight, to avoid timezone-boundary off-by-one errors in `toLocaleDateString`.
+
 ## Writing E2E Tests
 
 Use the **`playwright-e2e-writer`** agent for all Playwright test authoring. Invoke it via the Agent tool whenever:
