@@ -1,7 +1,12 @@
+import { useState } from "react";
 import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Navbar from "../components/Navbar";
 import { Skeleton } from "../components/ui/skeleton";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Alert, AlertDescription } from "../components/ui/alert";
 
 type Role = "admin" | "agent";
 
@@ -11,6 +16,12 @@ interface User {
   email: string;
   role: Role;
   createdAt: string;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
 }
 
 function getInitials(name: string) {
@@ -30,12 +41,76 @@ function formatDate(iso: string) {
   });
 }
 
+function validate(name: string, email: string, password: string): FormErrors {
+  const errors: FormErrors = {};
+  if (!name.trim() || name.trim().length < 3) {
+    errors.name = "Name must be at least 3 characters.";
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = "A valid email is required.";
+  }
+  if (!password || password.length < 8) {
+    errors.password = "Password must be at least 8 characters.";
+  }
+  return errors;
+}
+
 export default function Users() {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const { data, isPending, error } = useQuery({
     queryKey: ["users"],
     queryFn: () =>
       axios.get<{ users: User[] }>("/api/users").then((res) => res.data.users),
   });
+
+  const mutation = useMutation({
+    mutationFn: (payload: { name: string; email: string; password: string }) =>
+      axios.post<{ user: User }>("/api/users", payload).then((res) => res.data.user),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      closeModal();
+    },
+    onError: (err: any) => {
+      setApiError(err.response?.data?.error ?? err.message);
+    },
+  });
+
+  function openModal() {
+    setName("");
+    setEmail("");
+    setPassword("");
+    setFormErrors({});
+    setApiError(null);
+    setOpen(true);
+  }
+
+  function closeModal() {
+    setOpen(false);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setFormErrors({});
+    setApiError(null);
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errors = validate(name, email, password);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+    setApiError(null);
+    mutation.mutate({ name: name.trim(), email, password });
+  }
 
   const users = data ?? [];
   const errorMessage = error
@@ -47,9 +122,12 @@ export default function Users() {
       <Navbar />
 
       <main className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage team members and their roles.</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+            <p className="mt-1 text-sm text-gray-500">Manage team members and their roles.</p>
+          </div>
+          <Button onClick={openModal}>Add User</Button>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -108,6 +186,85 @@ export default function Users() {
           </p>
         )}
       </main>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
+          <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-gray-900">Add User</h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            {apiError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{apiError}</AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="add-name">Name</Label>
+                <Input
+                  id="add-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Jane Smith"
+                  disabled={mutation.isPending}
+                />
+                {formErrors.name && (
+                  <p className="text-xs text-red-500">{formErrors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="add-email">Email</Label>
+                <Input
+                  id="add-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                  disabled={mutation.isPending}
+                />
+                {formErrors.email && (
+                  <p className="text-xs text-red-500">{formErrors.email}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="add-password">Password</Label>
+                <Input
+                  id="add-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min. 8 characters"
+                  disabled={mutation.isPending}
+                />
+                {formErrors.password && (
+                  <p className="text-xs text-red-500">{formErrors.password}</p>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={closeModal} disabled={mutation.isPending}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={mutation.isPending}>
+                  {mutation.isPending ? "Adding..." : "Add User"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -135,6 +135,33 @@ body {
 }
 ```
 
+## Validation
+
+### Server — Zod (`server/src/index.ts`)
+Use **Zod** for all request body validation in Express routes. Parse with `safeParse` and return the first issue message on failure:
+
+```ts
+import { z } from "zod";
+
+const mySchema = z.object({
+  name: z.string().trim().min(3, "Name must be at least 3 characters."),
+  email: z.email("A valid email is required."),
+});
+
+app.post("/api/resource", requireAuth, async (req, res) => {
+  const result = mySchema.safeParse(req.body);
+  if (!result.success) {
+    res.status(400).json({ error: result.error.issues[0]?.message ?? "Invalid input." });
+    return;
+  }
+  const { name, email } = result.data;
+  // ...
+});
+```
+
+### Client — inline validation
+For client-side form validation, validate manually before calling the API (no separate form library needed unless the form is complex). Display field-level error messages below each input.
+
 ## Data Fetching (client)
 
 - Use **axios** for all HTTP requests — never `fetch`

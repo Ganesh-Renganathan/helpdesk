@@ -6,7 +6,7 @@ import { toNodeHandler } from "better-auth/node";
 import { prisma } from "./lib/prisma";
 import { auth } from "./lib/auth";
 import { requireAuth } from "./middleware/requireAuth";
-import { requireAdmin } from "./middleware/requireAdmin";
+import usersRouter from "./routes/users";
 
 const app = express();
 const PORT = process.env.PORT ?? 8080;
@@ -34,13 +34,7 @@ app.get("/api/me", requireAuth, (_req, res) => {
   res.json({ user: res.locals.session.user });
 });
 
-app.get("/api/users", requireAuth, requireAdmin, async (_req, res) => {
-  const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
-    orderBy: { createdAt: "asc" },
-  });
-  res.json({ users });
-});
+app.use("/api/users", usersRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
