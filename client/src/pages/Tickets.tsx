@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "../components/Navbar";
 import { Skeleton } from "../components/ui/skeleton";
@@ -93,8 +94,9 @@ export default function Tickets() {
               {tickets.map((ticket) => {
                 const displayName = ticket.fromName ?? ticket.fromEmail;
                 return (
-                  <div
+                  <Link
                     key={ticket.id}
+                    to={`/tickets/${ticket.id}`}
                     className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/60 transition-colors"
                   >
                     <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-semibold shrink-0">
@@ -112,7 +114,7 @@ export default function Tickets() {
                       {statusLabels[ticket.status]}
                     </span>
                     <span className="text-xs text-gray-400 shrink-0">{formatDate(ticket.createdAt)}</span>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

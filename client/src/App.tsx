@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Tickets from "./pages/Tickets";
+import TicketDetail from "./pages/TicketDetail";
 import Users from "./pages/Users";
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -40,6 +41,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Tickets />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/:id"
+          element={
+            <ProtectedRoute>
+              <TicketDetail />
             </ProtectedRoute>
           }
         />
