@@ -7,6 +7,7 @@ import { prisma } from "./lib/prisma";
 import { auth } from "./lib/auth";
 import { requireAuth } from "./middleware/requireAuth";
 import usersRouter from "./routes/users";
+import ticketsRouter from "./routes/tickets";
 import inboundEmailRouter from "./routes/inbound-email";
 
 const app = express();
@@ -36,6 +37,7 @@ app.get("/api/me", requireAuth, (_req, res) => {
 });
 
 app.use("/api/users", usersRouter);
+app.use("/api/tickets", ticketsRouter);
 app.use("/api/inbound-email", inboundEmailRouter);
 
 app.listen(PORT, () => {
