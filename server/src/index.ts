@@ -7,6 +7,7 @@ import { prisma } from "./lib/prisma";
 import { auth } from "./lib/auth";
 import { requireAuth } from "./middleware/requireAuth";
 import usersRouter from "./routes/users";
+import inboundEmailRouter from "./routes/inbound-email";
 
 const app = express();
 const PORT = process.env.PORT ?? 8080;
@@ -35,6 +36,7 @@ app.get("/api/me", requireAuth, (_req, res) => {
 });
 
 app.use("/api/users", usersRouter);
+app.use("/api/inbound-email", inboundEmailRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
